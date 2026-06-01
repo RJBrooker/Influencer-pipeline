@@ -25,7 +25,7 @@ def init_project(
     project: str = typer.Argument(..., help="The unique name for your new project."),
     sheet_id: str = typer.Option(..., "--sheet-id", help="The Google Sheet ID for this specific project.")
 ):
-    """Initializes a new project workspace and saves its configuration."""
+    """Initializes a new project workspace, saves its configuration, and tests the Google Sheet connection."""
     base_dir = os.path.join("projects", project)
     os.makedirs(base_dir, exist_ok=True)
     
@@ -35,9 +35,19 @@ def init_project(
     with open(config_path, "w") as f:
         json.dump(config_data, f, indent=4)
         
-    typer.secho(f"✅ Project '{project}' initialized successfully!", fg=typer.colors.GREEN)
-    typer.secho(f"📁 Workspace created at: {base_dir}")
-    typer.secho(f"📝 Config saved with Sheet ID: {sheet_id}")
+    typer.secho(f"✅ Project '{project}' workspace created at: {base_dir}", fg=typer.colors.GREEN)
+    typer.secho("🔄 Testing connection to Google Sheets...")
+    
+    try:
+        from src.sheets import get_sheets_client, fetch_parameters, fetch_inputs
+        client = get_sheets_client()
+        # This will verify auth and also trigger the caching to defaults.json!
+        fetch_parameters(client, sheet_id)
+        fetch_inputs(client, sheet_id)
+        typer.secho("✅ Successfully connected to Google Sheets and cached initial parameters!", fg=typer.colors.GREEN)
+    except Exception as e:
+        typer.secho(f"❌ Failed to connect to Google Sheets: {e}", fg=typer.colors.RED)
+        typer.secho("Make sure your credentials are correct and the Google Sheet is shared with your service account if needed.", fg=typer.colors.YELLOW)
 
 @app.command("run-base")
 def run_base(project: str = typer.Argument(..., help="The unique project name.")):

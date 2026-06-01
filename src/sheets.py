@@ -8,6 +8,7 @@ generated images and videos) back into the "OUTPUTS" tab.
 
 import json
 import os
+from datetime import datetime
 
 import gspread
 from google.oauth2.credentials import Credentials
@@ -228,3 +229,44 @@ def update_input_field(client: gspread.Client, spreadsheet_id: str, field_name: 
             sheet.append_row([field_name, value])
     except Exception as e:
         logger.error(f"Failed to update input field: {e}")
+
+def log_event(client: gspread.Client, spreadsheet_id: str, project: str, action: str, status: str):
+    """
+    Dual-logs an event.
+    1. Appends to the 'LOGS' tab in Google Sheets.
+    2. Appends to 'projects/<project>/project_logs.jsonl' locally.
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_data = {
+        "Timestamp": timestamp,
+        "Project": project,
+        "Action": action,
+        "Status": status
+    }
+    
+    # 1. Local Logging
+    local_log_dir = os.path.join("projects", project)
+    os.makedirs(local_log_dir, exist_ok=True)
+    local_log_path = os.path.join(local_log_dir, "project_logs.jsonl")
+    try:
+        with open(local_log_path, "a") as f:
+            f.write(json.dumps(log_data) + "\n")
+    except Exception as e:
+        logger.error(f"Failed to write local log: {e}")
+
+    # 2. Remote Logging (Google Sheets)
+    try:
+        if not client or not spreadsheet_id:
+            return
+            
+        doc = client.open_by_key(spreadsheet_id)
+        try:
+            sheet = doc.worksheet("LOGS")
+        except gspread.exceptions.WorksheetNotFound:
+            logger.info("LOGS tab not found. Creating it.")
+            sheet = doc.add_worksheet(title="LOGS", rows=100, cols=4)
+            sheet.append_row(["Timestamp", "Project", "Action", "Status"])
+            
+        sheet.append_row([timestamp, project, action, status])
+    except Exception as e:
+        logger.error(f"Failed to write to Google Sheets LOGS: {e}")

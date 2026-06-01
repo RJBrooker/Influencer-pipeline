@@ -39,11 +39,15 @@ def init_project(
     typer.secho("🔄 Testing connection to Google Sheets...")
     
     try:
-        from src.sheets import get_sheets_client, fetch_parameters, fetch_inputs
+        from src.sheets import get_sheets_client, fetch_parameters, fetch_inputs, log_event
         client = get_sheets_client()
         # This will verify auth and also trigger the caching to defaults.json!
         fetch_parameters(client, sheet_id)
         fetch_inputs(client, sheet_id)
+        
+        # Log the initialization!
+        log_event(client, sheet_id, project, "Initialization", "Completed")
+        
         typer.secho("✅ Successfully connected to Google Sheets and cached initial parameters!", fg=typer.colors.GREEN)
     except Exception as e:
         typer.secho(f"❌ Failed to connect to Google Sheets: {e}", fg=typer.colors.RED)

@@ -5,7 +5,7 @@
             "temperature": 0.0
         },
         "image": {
-            "model": "gemini-3.1-pro-preview",
+            "model": "gemini-3.0-pro-image",
             "aspect_ratio": "9:16"
         },
         "video": {
@@ -15,13 +15,13 @@
         }
     },
     "inputs": {
-        "initial_image_prompt": "A cinematic shot of a fashion model, highly detailed, 4k",
+        "initial_image_prompt": "A cinematic shot of a fashion model, highly detailed, 4k. Candid photo.",
         "locations": [
             "Paris",
             "Tokyo",
             "New York"
         ],
-        "additional_image_instructions": "Keep lighting natural and photorealistic",
+        "additional_image_instructions": "Keep lighting natural and candid. Old Camera stlye. 80s style camera.",
         "additional_video_instructions": "Gentle cinematic camera pan",
         "initial_image_file": null
     }

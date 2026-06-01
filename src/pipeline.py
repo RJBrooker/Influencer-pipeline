@@ -28,6 +28,7 @@ from src.sheets import (
     fetch_parameters,
     get_outputs,
     get_sheets_client,
+    log_event,
     update_output_row,
 )
 
@@ -79,55 +80,63 @@ async def generate_base_scene(project: str):
     
     spreadsheet_id = load_project_config(project)
     images_dir, videos_dir = ensure_project_dirs(project)
-    tracker = CostTracker()
-    
     sheets_client = await asyncio.to_thread(get_sheets_client)
-    params = await asyncio.to_thread(fetch_parameters, sheets_client, spreadsheet_id)
-    inputs = await asyncio.to_thread(fetch_inputs, sheets_client, spreadsheet_id)
-    outputs = await asyncio.to_thread(get_outputs, sheets_client, spreadsheet_id)
     
-    tracker.text_model = params.text.model
-    tracker.image_model = params.image.model
-    tracker.video_model = params.video.model
+    log_event(sheets_client, spreadsheet_id, project, "Step 1: Base Scene", "Started")
     
-    original_row = next((r for r in outputs if r.get("Project") == project and r.get("Type") == "Original"), None)
-    
-    base_image_file = inputs.initial_image_file
-    base_video_prompt = original_row.get("Video Prompt") if original_row else None
-    
-    if not base_image_file or not os.path.exists(os.path.join(images_dir, base_image_file)):
-        logger.info("🎨 Generating Initial Base Image...")
-        base_image_bytes = await generate_base_image(params=params, inputs=inputs, tracker=tracker)
-        base_image_file = "00_original_image.jpg"
+    try:
+        tracker = CostTracker()
         
-        with open(os.path.join(images_dir, base_image_file), "wb") as f:
-            f.write(base_image_bytes)
+        params = await asyncio.to_thread(fetch_parameters, sheets_client, spreadsheet_id)
+        inputs = await asyncio.to_thread(fetch_inputs, sheets_client, spreadsheet_id)
+        outputs = await asyncio.to_thread(get_outputs, sheets_client, spreadsheet_id)
+        
+        tracker.text_model = params.text.model
+        tracker.image_model = params.image.model
+        tracker.video_model = params.video.model
+        
+        original_row = next((r for r in outputs if r.get("Project") == project and r.get("Type") == "Original"), None)
+        
+        base_image_file = inputs.initial_image_file
+        base_video_prompt = original_row.get("Video Prompt") if original_row else None
+        
+        if not base_image_file or not os.path.exists(os.path.join(images_dir, base_image_file)):
+            logger.info("🎨 Generating Initial Base Image...")
+            base_image_bytes = await generate_base_image(params=params, inputs=inputs, tracker=tracker)
+            base_image_file = "00_original_image.jpg"
             
-        row_data = {
-            "Project": project, "Type": "Original", "Location": "N/A", "Image Input": "N/A",
-            "Image Prompt": inputs.initial_image_prompt, "Video Prompt": "",
-            "Image File": base_image_file, "Video File": ""
-        }
-        await asyncio.to_thread(update_output_row, sheets_client, spreadsheet_id, row_data, "Type", "Original", project)
-    else:
-        logger.info(f"✔️ Found existing Initial Image: {base_image_file}")
-        
-    if not base_video_prompt:
-        logger.info("📝 Generating Initial Video Prompt...")
-        base_video_prompt = await generate_video_prompt(
-            params=params, inputs=inputs, image_prompt=inputs.initial_image_prompt, tracker=tracker
-        )
-        row_data = {
-            "Project": project, "Type": "Original", "Location": "N/A", "Image Input": "N/A",
-            "Image Prompt": inputs.initial_image_prompt, "Video Prompt": base_video_prompt,
-            "Image File": base_image_file, "Video File": original_row.get("Video File", "") if original_row else ""
-        }
-        await asyncio.to_thread(update_output_row, sheets_client, spreadsheet_id, row_data, "Type", "Original", project)
-    else:
-         logger.info("✔️ Found existing Initial Video Prompt")
+            with open(os.path.join(images_dir, base_image_file), "wb") as f:
+                f.write(base_image_bytes)
+                
+            row_data = {
+                "Project": project, "Type": "Original", "Location": "N/A", "Image Input": "N/A",
+                "Image Prompt": inputs.initial_image_prompt, "Video Prompt": "",
+                "Image File": base_image_file, "Video File": ""
+            }
+            await asyncio.to_thread(update_output_row, sheets_client, spreadsheet_id, row_data, "Type", "Original", project)
+        else:
+            logger.info(f"✔️ Found existing Initial Image: {base_image_file}")
+            
+        if not base_video_prompt:
+            logger.info("📝 Generating Initial Video Prompt...")
+            base_video_prompt = await generate_video_prompt(
+                params=params, inputs=inputs, image_prompt=inputs.initial_image_prompt, tracker=tracker
+            )
+            row_data = {
+                "Project": project, "Type": "Original", "Location": "N/A", "Image Input": "N/A",
+                "Image Prompt": inputs.initial_image_prompt, "Video Prompt": base_video_prompt,
+                "Image File": base_image_file, "Video File": original_row.get("Video File", "") if original_row else ""
+            }
+            await asyncio.to_thread(update_output_row, sheets_client, spreadsheet_id, row_data, "Type", "Original", project)
+        else:
+             logger.info("✔️ Found existing Initial Video Prompt")
 
-    logger.info("🛑 Base step completed. Review the image in your output folder before proceeding.")
-    tracker.print_receipt()
+        logger.info("🛑 Base step completed. Review the image in your output folder before proceeding.")
+        tracker.print_receipt()
+        log_event(sheets_client, spreadsheet_id, project, "Step 1: Base Scene", "Completed")
+    except Exception as e:
+        log_event(sheets_client, spreadsheet_id, project, "Step 1: Base Scene", f"Failed: {e}")
+        raise
 
 
 async def _generate_single_location_image(i: int, location: str, inputs, params, outputs, orig_image_bytes, base_image_file, tracker, sheets_client, spreadsheet_id, project, images_dir):
@@ -175,38 +184,46 @@ async def generate_location_variations(project: str, test_mode: bool = False):
         
     spreadsheet_id = load_project_config(project)
     images_dir, videos_dir = ensure_project_dirs(project)
-    tracker = CostTracker()
-    
     sheets_client = await asyncio.to_thread(get_sheets_client)
-    params = await asyncio.to_thread(fetch_parameters, sheets_client, spreadsheet_id)
-    inputs = await asyncio.to_thread(fetch_inputs, sheets_client, spreadsheet_id)
-    outputs = await asyncio.to_thread(get_outputs, sheets_client, spreadsheet_id)
     
-    tracker.text_model = params.text.model
-    tracker.image_model = params.image.model
-    tracker.video_model = params.video.model
+    log_event(sheets_client, spreadsheet_id, project, "Step 2: Location Variations", "Started")
     
-    original_row = next((r for r in outputs if r.get("Project") == project and r.get("Type") == "Original"), None)
-    if not original_row or not original_row.get("Image File"):
-        logger.error("❌ Base image not found in outputs! Please run 'run-base' first.")
-        return
+    try:
+        tracker = CostTracker()
         
-    base_image_file = original_row.get("Image File")
-    with open(os.path.join(images_dir, base_image_file), "rb") as f:
-        orig_image_bytes = f.read()
+        params = await asyncio.to_thread(fetch_parameters, sheets_client, spreadsheet_id)
+        inputs = await asyncio.to_thread(fetch_inputs, sheets_client, spreadsheet_id)
+        outputs = await asyncio.to_thread(get_outputs, sheets_client, spreadsheet_id)
+        
+        tracker.text_model = params.text.model
+        tracker.image_model = params.image.model
+        tracker.video_model = params.video.model
+        
+        original_row = next((r for r in outputs if r.get("Project") == project and r.get("Type") == "Original"), None)
+        if not original_row or not original_row.get("Image File"):
+            logger.error("❌ Base image not found in outputs! Please run 'run-base' first.")
+            return
+            
+        base_image_file = original_row.get("Image File")
+        with open(os.path.join(images_dir, base_image_file), "rb") as f:
+            orig_image_bytes = f.read()
 
-    locations_to_process = inputs.locations[:1] if test_mode else inputs.locations
-    logger.info(f"🌍 Processing {len(locations_to_process)} location images concurrently...")
-    
-    tasks = []
-    for i, location in enumerate(locations_to_process, start=1):
-        tasks.append(_generate_single_location_image(
-            i, location, inputs, params, outputs, orig_image_bytes, base_image_file, tracker, sheets_client, spreadsheet_id, project, images_dir
-        ))
+        locations_to_process = inputs.locations[:1] if test_mode else inputs.locations
+        logger.info(f"🌍 Processing {len(locations_to_process)} location images concurrently...")
         
-    await asyncio.gather(*tasks)
-    logger.info("🛑 Location step completed. Review the location images before generating videos.")
-    tracker.print_receipt()
+        tasks = []
+        for i, location in enumerate(locations_to_process, start=1):
+            tasks.append(_generate_single_location_image(
+                i, location, inputs, params, outputs, orig_image_bytes, base_image_file, tracker, sheets_client, spreadsheet_id, project, images_dir
+            ))
+            
+        await asyncio.gather(*tasks)
+        logger.info("🛑 Location step completed. Review the location images before generating videos.")
+        tracker.print_receipt()
+        log_event(sheets_client, spreadsheet_id, project, "Step 2: Location Variations", "Completed")
+    except Exception as e:
+        log_event(sheets_client, spreadsheet_id, project, "Step 2: Location Variations", f"Failed: {e}")
+        raise
 
 
 async def _generate_single_video(location: str, loc_row: dict, params, tracker, sheets_client, spreadsheet_id, project, images_dir, videos_dir):
@@ -259,28 +276,35 @@ async def generate_final_videos(project: str, test_mode: bool = False):
         
     spreadsheet_id = load_project_config(project)
     images_dir, videos_dir = ensure_project_dirs(project)
-    tracker = CostTracker()
-    
     sheets_client = await asyncio.to_thread(get_sheets_client)
-    params = await asyncio.to_thread(fetch_parameters, sheets_client, spreadsheet_id)
-    outputs = await asyncio.to_thread(get_outputs, sheets_client, spreadsheet_id)
     
-    tracker.text_model = params.text.model
-    tracker.image_model = params.image.model
-    tracker.video_model = params.video.model
+    log_event(sheets_client, spreadsheet_id, project, "Step 3: Generate Final Videos", "Started")
     
-    project_rows = [r for r in outputs if r.get("Project") == project]
-    
-    rows_to_process = project_rows[:1] if test_mode else project_rows
-    logger.info(f"🎬 Processing {len(rows_to_process)} video generations concurrently...")
-    
-    tasks = []
-    for row in rows_to_process:
-        location = row.get("Location", "N/A")
-        tasks.append(_generate_single_video(
-            location, row, params, tracker, sheets_client, spreadsheet_id, project, images_dir, videos_dir
-        ))
+    try:
+        params = await asyncio.to_thread(fetch_parameters, sheets_client, spreadsheet_id)
+        outputs = await asyncio.to_thread(get_outputs, sheets_client, spreadsheet_id)
         
-    await asyncio.gather(*tasks)
-    logger.info(f"🎉 Project '{project}' Final Videos Complete!")
-    tracker.print_receipt()
+        tracker = CostTracker()
+        tracker.text_model = params.text.model
+        tracker.image_model = params.image.model
+        tracker.video_model = params.video.model
+        
+        project_rows = [r for r in outputs if r.get("Project") == project]
+        
+        rows_to_process = project_rows[:1] if test_mode else project_rows
+        logger.info(f"🎬 Processing {len(rows_to_process)} video generations concurrently...")
+        
+        tasks = []
+        for row in rows_to_process:
+            location = row.get("Location", "N/A")
+            tasks.append(_generate_single_video(
+                location, row, params, tracker, sheets_client, spreadsheet_id, project, images_dir, videos_dir
+            ))
+            
+        await asyncio.gather(*tasks)
+        logger.info(f"🎉 Project '{project}' Final Videos Complete!")
+        tracker.print_receipt()
+        log_event(sheets_client, spreadsheet_id, project, "Step 3: Generate Final Videos", "Completed")
+    except Exception as e:
+        log_event(sheets_client, spreadsheet_id, project, "Step 3: Generate Final Videos", f"Failed: {e}")
+        raise

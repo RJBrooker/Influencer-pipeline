@@ -13,29 +13,30 @@ A modern, multi-project pipeline to generate AI influencer images and videos con
 
 ## 🚀 The Workflow
 
-This pipeline is designed for intuitive, step-by-step generation with manual review points.
+This pipeline is designed for an intuitive, step-by-step generation process with built-in manual review points.
 
 ### 1. Initialize a Project
-Create a new project workspace linked to a specific Google Sheet ID.
+**What it does:** Creates a local workspace for your project and connects it to your Google Sheet. It immediately tests your API credentials, pulls down your settings, and even auto-populates the Google Sheet with default templates if it's completely blank!
 ```bash
 uv run python main_pipeline.py init "my_campaign" --sheet-id "1BxiMvs0XRX5Y..."
 ```
-*(This creates `projects/my_campaign/` to store your images and videos).*
 
-### 2. Generate Base Campaign (Step 1)
-Generates the very first base image and video prompt. **Stop here to review the initial output.**
+### 2. Generate Base Scene (Step 1)
+**What it does:** Reads your "Initial Image Prompt" from the Google Sheet and generates exactly **one** master base image using Gemini 3.1 Pro. It then uses Gemini to dynamically rewrite that image prompt into a high-quality video prompt.
+**Why stop here?** So you can visually review the base image in your `projects/my_campaign/images/` folder and tweak your prompt until you have the perfect character *before* you spend money generating dozens of variations!
 ```bash
 uv run python main_pipeline.py run-base "my_campaign"
 ```
 
 ### 3. Generate Location Variations (Step 2)
-Uses your base image to generate consistent character images across all the new locations defined in your Google Sheet. **Stop here to review the location images.**
+**What it does:** Reads your list of "Locations" from the Google Sheet. For every location, it asks Gemini to modify your original prompt to place the character in the new background. It then generates the new images *while explicitly referencing your base image* to guarantee the character's face and style remain consistent across all locations.
+**Why stop here?** So you can review all the newly generated location images to ensure they look perfect before sending them to the expensive video generation AI.
 ```bash
 uv run python main_pipeline.py run-locations "my_campaign"
 ```
 
 ### 4. Generate Final Videos (Step 3)
-Takes all the generated location images and prompts, sending them to the video AI to generate your final `.mp4` files.
+**What it does:** Takes every single location image and its corresponding video prompt, and sends them in bulk to the Veo / Fal.ai video generation API. It waits for the generations to finish, downloads the high-quality `.mp4` files directly to your local folder, and automatically logs the final file paths back into your Google Sheet's "OUTPUTS" tab.
 ```bash
 uv run python main_pipeline.py run-videos "my_campaign"
 ```

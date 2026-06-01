@@ -1,5 +1,7 @@
 # AI Influencer Pipeline 🎬
 
+[![Demo Video](https://img.youtube.com/vi/t2WRpRqIz6s/maxresdefault.jpg)](https://www.youtube.com/watch?v=t2WRpRqIz6s)
+
 A modern, multi-project pipeline to generate AI influencer images and videos consistently using Gemini and Fal.ai.
 
 ## 🛠️ Setup

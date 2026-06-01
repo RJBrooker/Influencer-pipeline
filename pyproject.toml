@@ -1,0 +1,31 @@
+[project]
+name = "influencer-pipeline"
+version = "0.1.0"
+description = "AI Campaign Generator Pipeline"
+readme = "README.txt"
+requires-python = ">=3.10"
+dependencies = [
+    "prefect>=2.14.0",
+    "pydantic>=2.4.0",
+    "pydantic-settings>=2.0.3",
+    "python-dotenv>=1.0.0",
+    "gspread>=5.11.2",
+    "loguru>=0.7.2",
+    "google-genai>=0.1.0",
+    "pillow>=10.0.1",
+    "httpx>=0.25.0",
+    "fal-client>=0.2.1",
+    "typer>=0.9.0",
+    "tenacity>=8.2.3"
+]
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = []
+fixable = ["ALL"]
+unfixable = []

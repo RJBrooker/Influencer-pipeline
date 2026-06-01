@@ -8,6 +8,8 @@ and calculates the estimated spend based on the pricing configurations defined i
 At the end of a step, it prints a beautiful receipt to the terminal.
 """
 
+from typing import Dict
+from prefect.artifacts import create_markdown_artifact
 from loguru import logger
 
 from .config import PRICING
@@ -55,27 +57,42 @@ class CostTracker:
             "total_cost": round(total_cost, 4),
         }
 
-    def print_receipt(self):
+    def print_receipt(self, step_name: str = "Pipeline"):
         costs = self.calculate_cost()
+        text_cost = costs["text_cost"]
+        img_cost = costs["image_cost"]
+        vid_cost = costs["video_cost"]
+        total_cost = costs["total_cost"]
+
         receipt = f"""
-=========================================
-💸 GOD COST TRACKER - RUN RECEIPT 💸
-=========================================
-📝 Text Generation ({self.text_model})
-   Input Tokens:  {self.total_input_tokens:,}
-   Output Tokens: {self.total_output_tokens:,}
-   Cost:          ${costs["text_cost"]:.6f}
+# 💸 GOD COST TRACKER - {step_name.upper()}
 
-🖼️ Image Generation ({self.image_model})
-   Images Created: {self.total_images_generated}
-   Cost:          ${costs["image_cost"]:.4f}
+**📝 Text Generation** (`{self.text_model}`)
+* Input Tokens:  {self.total_input_tokens}
+* Output Tokens: {self.total_output_tokens}
+* Cost:          ${text_cost:.6f}
 
-🎬 Video Generation ({self.video_model})
-   Videos Created: {self.total_videos_generated}
-   Cost:          ${costs["video_cost"]:.4f}
+**🖼️ Image Generation** (`{self.image_model}`)
+* Images Created: {self.total_images_generated}
+* Cost:          ${img_cost:.4f}
 
------------------------------------------
-💰 TOTAL ESTIMATED COST: ${costs["total_cost"]:.4f}
-=========================================
+**🎬 Video Generation** (`{self.video_model}`)
+* Videos Created: {self.total_videos_generated}
+* Cost:          ${vid_cost:.4f}
+
+---
+### 💰 TOTAL ESTIMATED COST: ${total_cost:.4f}
 """
+        print(receipt)
+        
+        # Publish to Prefect UI Dashboard
+        try:
+            create_markdown_artifact(
+                key=f"cost-receipt-{step_name.replace(' ', '-').lower()}",
+                markdown=receipt,
+                description=f"Cost Receipt for {step_name}"
+            )
+        except Exception:
+            pass
+        
         logger.info(receipt)

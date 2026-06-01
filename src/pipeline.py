@@ -23,6 +23,7 @@ from src.ai_clients import (
     generate_video_prompt,
 )
 from src.cost_tracker import CostTracker
+from prefect.artifacts import create_markdown_artifact
 from src.sheets import (
     fetch_inputs,
     fetch_parameters,
@@ -131,8 +132,18 @@ async def generate_base_scene(project: str):
         else:
              logger.info("✔️ Found existing Initial Video Prompt")
 
+        # Publish the prompt to the Prefect UI
+        try:
+            create_markdown_artifact(
+                key="base-video-prompt",
+                markdown=f"### Base Video Prompt\n\n{base_video_prompt}",
+                description="Generated Base Video Prompt"
+            )
+        except Exception:
+            pass
+
         logger.info("🛑 Base step completed. Review the image in your output folder before proceeding.")
-        tracker.print_receipt()
+        tracker.print_receipt("Step 1: Base Scene")
         log_event(sheets_client, spreadsheet_id, project, "Step 1: Base Scene", "Completed")
     except Exception as e:
         log_event(sheets_client, spreadsheet_id, project, "Step 1: Base Scene", f"Failed: {e}")
@@ -219,7 +230,7 @@ async def generate_location_variations(project: str, test_mode: bool = False):
             
         await asyncio.gather(*tasks)
         logger.info("🛑 Location step completed. Review the location images before generating videos.")
-        tracker.print_receipt()
+        tracker.print_receipt("Step 2: Location Variations")
         log_event(sheets_client, spreadsheet_id, project, "Step 2: Location Variations", "Completed")
     except Exception as e:
         log_event(sheets_client, spreadsheet_id, project, "Step 2: Location Variations", f"Failed: {e}")
@@ -303,7 +314,7 @@ async def generate_final_videos(project: str, test_mode: bool = False):
             
         await asyncio.gather(*tasks)
         logger.info(f"🎉 Project '{project}' Final Videos Complete!")
-        tracker.print_receipt()
+        tracker.print_receipt("Step 3: Final Videos")
         log_event(sheets_client, spreadsheet_id, project, "Step 3: Generate Final Videos", "Completed")
     except Exception as e:
         log_event(sheets_client, spreadsheet_id, project, "Step 3: Generate Final Videos", f"Failed: {e}")

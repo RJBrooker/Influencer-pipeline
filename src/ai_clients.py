@@ -12,8 +12,7 @@ import fal_client
 import httpx
 from google import genai
 from google.genai import types
-from loguru import logger
-from prefect import task
+from prefect import task, get_run_logger
 
 from src.config import BatchParameters, PromptInputs, settings
 from .cost_tracker import CostTracker
@@ -32,6 +31,7 @@ async def generate_base_image(params: BatchParameters, inputs: PromptInputs, tra
     Uses the initial image prompt and any additional instructions from the Google Sheet.
     Returns the raw image bytes.
     """
+    logger = get_run_logger()
     client = get_gemini_client()
     logger.info(f"Generating base image using {params.image.model}")
     full_prompt = (
@@ -60,6 +60,7 @@ async def generate_video_prompt(
     It applies any 'Additional Video Instructions' the user provided in the Google Sheet.
     Returns the newly generated video prompt string.
     """
+    logger = get_run_logger()
     client = get_gemini_client()
     logger.info("Generating video prompt via Gemini")
     instruction = f"""
@@ -94,6 +95,7 @@ async def generate_modified_prompts(
     After creating the new image prompt, it also generates the matching video prompt.
     Returns a tuple of (new_image_prompt, new_video_prompt).
     """
+    logger = get_run_logger()
     client = get_gemini_client()
     logger.info(f"Writing modified prompts for: {location}")
 
@@ -153,6 +155,7 @@ async def generate_location_image(
     The new image uses the reference for character consistency while applying the new location prompt.
     Returns the raw image bytes.
     """
+    logger = get_run_logger()
     client = get_gemini_client()
     logger.info(f"Generating location image for {location} using {params.image.model}")
     image_part = types.Part.from_bytes(data=orig_image_bytes, mime_type="image/jpeg")
@@ -177,6 +180,7 @@ async def generate_video(
     It uploads the static image, passes the dynamic video prompt, and waits for the generation to complete.
     Once finished, it downloads the resulting .mp4 file and saves it to the specified output_path.
     """
+    logger = get_run_logger()
     client = get_gemini_client()
     logger.info(f"Generating video using {params.video.model} for {output_path}")
 

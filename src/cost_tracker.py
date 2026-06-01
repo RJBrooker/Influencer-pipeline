@@ -22,7 +22,7 @@ class CostTracker:
 
     # Store specific models used to compute final cost
     text_model: str = "gemini-2.5-flash"
-    image_model: str = "gemini-3.1-pro-preview"
+    image_model: str = "imagen-3.0-generate-002"
     video_model: str = "veo-3.1-generate-preview"
 
     def add_tokens(self, input_tokens: int, output_tokens: int):
@@ -37,7 +37,7 @@ class CostTracker:
 
     def calculate_cost(self) -> dict:
         text_pricing = PRICING.get(self.text_model, PRICING["gemini-2.5-flash"])
-        img_pricing = PRICING.get(self.image_model, PRICING["gemini-3.1-pro-preview"])
+        img_pricing = PRICING.get(self.image_model, PRICING["imagen-3.0-generate-002"])
         vid_pricing = PRICING.get(self.video_model, PRICING["veo-3.1-generate-preview"])
 
         text_cost = (self.total_input_tokens / 1_000_000 * text_pricing["input_per_1m"]) + (

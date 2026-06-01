@@ -222,7 +222,11 @@ async def generate_video(
         )
 
         logger.info(f"Waiting for Veo video generation to complete for {output_path}...")
+        attempts = 0
         while not operation.done:
+            attempts += 1
+            if attempts % 2 == 0:  # Log every 30 seconds to avoid spamming too much, but show we are alive
+                logger.info(f"⏳ Still generating... (Ping #{attempts}: Veo API indicates 'done: False')")
             await asyncio.sleep(15)  # Replaces time.sleep(15) allowing concurrency
             operation = await client.aio.operations.get(operation=operation)
 

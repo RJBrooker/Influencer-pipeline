@@ -41,13 +41,15 @@ uv run python main_pipeline.py run-locations "my_campaign"
 uv run python main_pipeline.py run-videos "my_campaign"
 ```
 
-## 📊 Dashboard Visualization
+## 📊 Dashboard Visualization (Optional)
 
-Want to watch your pipeline run in real-time? Start the UI dashboard in a separate terminal:
+When you run the commands above, you will see a log saying *"Starting temporary server on http://127.0.0.1:8521"*. **You can completely ignore that link!** It is just raw internal data.
+
+If you actually want to watch your pipeline run in real-time on a beautiful dashboard, open a second terminal and run our built-in dashboard command:
 ```bash
-uv run prefect server start
+uv run python main_pipeline.py dashboard
 ```
-Then visit `http://127.0.0.1:4200` in your browser.
+Then visit **`http://127.0.0.1:4200`** in your browser.
 
 ## 🏗️ Pipeline Architecture
 

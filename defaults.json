@@ -15,7 +15,7 @@
         }
     },
     "inputs": {
-        "initial_image_prompt": "A cinematic shot of a fashion model, highly detailed, 4k. Candid photo.",
+        "initial_image_prompt": "A cinematic shot of a fashion model, highly detailed, 4k. Candid photo. Old film camera. 80s style film and lighting.",
         "locations": [
             "Paris",
             "Tokyo",

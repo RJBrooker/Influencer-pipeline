@@ -56,23 +56,33 @@ def init_project(
 @app.command("run-base")
 def run_base(project: str = typer.Argument(..., help="The unique project name.")):
     """Step 1: Generates ONLY the base image and video prompt, then stops so you can review."""
+    typer.secho("💡 Note: You can safely ignore any 'Starting temporary server' logs below. They are just internal data!", fg=typer.colors.CYAN)
     asyncio.run(generate_base_scene(project=project))
 
 @app.command("run-locations")
 def run_locations(
     project: str = typer.Argument(..., help="The unique project name."),
-    test_mode: bool = typer.Option(False, "--test-mode", help="Limits to 1 location.")
+    test: bool = typer.Option(False, "--test", help="Run in test mode (processes only 1 location).")
 ):
-    """Step 2: Generates ONLY the modified location prompts and location images (no videos)."""
-    asyncio.run(generate_location_variations(project=project, test_mode=test_mode))
+    """Step 2: Generates images for all locations based on the base image."""
+    typer.secho("💡 Note: You can safely ignore any 'Starting temporary server' logs below. They are just internal data!", fg=typer.colors.CYAN)
+    asyncio.run(generate_location_variations(project=project, test_mode=test))
 
 @app.command("run-videos")
 def run_videos(
     project: str = typer.Argument(..., help="The unique project name."),
-    test_mode: bool = typer.Option(False, "--test-mode", help="Limits to 1 video.")
+    test: bool = typer.Option(False, "--test", help="Run in test mode (generates only 1 video).")
 ):
-    """Step 3: Generates the Veo/Fal videos for all existing images."""
-    asyncio.run(generate_final_videos(project=project, test_mode=test_mode))
+    """Step 3: Reads generated location images and prompts, and creates the final videos."""
+    typer.secho("💡 Note: You can safely ignore any 'Starting temporary server' logs below. They are just internal data!", fg=typer.colors.CYAN)
+    asyncio.run(generate_final_videos(project=project, test_mode=test))
+
+@app.command("dashboard")
+def run_dashboard():
+    """Starts the beautiful visual web dashboard for tracking pipeline progress."""
+    typer.secho("🚀 Starting the web dashboard!", fg=typer.colors.GREEN)
+    typer.secho("👉 Open http://127.0.0.1:4200 in your web browser.", fg=typer.colors.CYAN)
+    os.system("prefect server start")
 
 if __name__ == "__main__":
     app()

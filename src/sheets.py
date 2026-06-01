@@ -63,9 +63,9 @@ def fetch_parameters(client: gspread.Client, spreadsheet_id: str) -> BatchParame
         
         # Intercept and correct invalid models fetched from older sheets
         fetched_img_model = params.get("🖼️ Image Model")
-        if fetched_img_model in ["gemini-3.0-pro-image", "gemini-3.1-pro-preview"]:
-            logger.warning(f"Intercepted invalid image model '{fetched_img_model}' from Google Sheets. Auto-correcting to 'imagen-3.0-generate-002'.")
-            fetched_img_model = "imagen-3.0-generate-002"
+        if fetched_img_model in ["gemini-3.0-pro-image", "imagen-3.0-generate-002", "gemini-3.1-pro-preview"]:
+            logger.warning(f"Intercepted invalid image model '{fetched_img_model}'. Auto-correcting to 'gemini-3-pro-image-preview'.")
+            fetched_img_model = "gemini-3-pro-image-preview"
             
         fetched_text_model = params.get("📝 Text Model")
         if fetched_text_model == "gemini-3.0-pro-preview":

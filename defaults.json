@@ -5,7 +5,7 @@
             "temperature": 0.0
         },
         "image": {
-            "model": "gemini-3.0-pro-image",
+            "model": "gemini-3-pro-image-preview",
             "aspect_ratio": "9:16"
         },
         "video": {
@@ -15,13 +15,13 @@
         }
     },
     "inputs": {
-        "initial_image_prompt": "A cinematic shot of a fashion model, highly detailed, 4k. Candid photo. Old film camera. 80s style film and lighting.",
+        "initial_image_prompt": "A cinematic shot of a fashion model, highly detailed, 4k. Candid photo. shot in 80s style film and lighting.",
         "locations": [
-            "Paris",
-            "Tokyo",
-            "New York"
+            "Deadvlei Dark trees stand against bright orange dunes and white clay.",
+            "Gardens by the Bay, Tall metal structures emit light in multiple different visible colors.",
+            "Flower Dome, A large glass structure containing plants from various global regions."
         ],
-        "additional_image_instructions": "Keep lighting natural and candid. Old Camera stlye. 80s style camera.",
+        "additional_image_instructions": "Keep lighting natural and candid. Old Camera stlye. shot in a 80s style camera.",
         "additional_video_instructions": "Gentle cinematic camera pan",
         "initial_image_file": null
     }

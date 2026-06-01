@@ -33,14 +33,46 @@ def fetch_parameters(client: gspread.Client, spreadsheet_id: str) -> BatchParame
     """Fetches generation parameters from the PARAMETERS tab, caching them in defaults.json."""
     try:
         logger.info("Fetching parameters from Google Sheets...")
-        sheet = client.open_by_key(spreadsheet_id).worksheet("PARAMETERS")
+        doc = client.open_by_key(spreadsheet_id)
+        
+        try:
+            sheet = doc.worksheet("PARAMETERS")
+        except gspread.exceptions.WorksheetNotFound:
+            logger.warning("PARAMETERS tab not found. Creating it with defaults.")
+            sheet = doc.add_worksheet(title="PARAMETERS", rows=10, cols=2)
+            
         records = sheet.get_all_records()
+        
+        defaults = BatchParameters()
+        if not records:
+            logger.info("Populating PARAMETERS tab with default values...")
+            if not sheet.row_values(1):
+                sheet.append_row(["Parameter", "Value"])
+            sheet.append_rows([
+                ["📝 Text Model", defaults.text.model],
+                ["🌡️ Text Temperature", defaults.text.temperature],
+                ["🖼️ Image Model", defaults.image.model],
+                ["📐 Image Aspect Ratio", defaults.image.aspect_ratio],
+                ["🎬 Video Model", defaults.video.model],
+                ["📐 Video Aspect Ratio", defaults.video.aspect_ratio],
+            ])
+            records = sheet.get_all_records()
+
         params = {r.get("Parameter"): r.get("Value") for r in records}
         
         batch_params = BatchParameters(
-            text=TextSettings(model=params.get("📝 Text Model"), temperature=float(params.get("🌡️ Text Temperature", 0.7))),
-            image=ImageSettings(model=params.get("🖼️ Image Model"), aspect_ratio=params.get("📐 Image Aspect Ratio")),
-            video=VideoSettings(model=params.get("🎬 Video Model"), aspect_ratio=params.get("📐 Video Aspect Ratio"))
+            text=TextSettings(
+                model=params.get("📝 Text Model") or defaults.text.model, 
+                temperature=float(params.get("🌡️ Text Temperature") if params.get("🌡️ Text Temperature") not in [None, ""] else defaults.text.temperature)
+            ),
+            image=ImageSettings(
+                model=params.get("🖼️ Image Model") or defaults.image.model, 
+                aspect_ratio=params.get("📐 Image Aspect Ratio") or defaults.image.aspect_ratio
+            ),
+            video=VideoSettings(
+                model=params.get("🎬 Video Model") or defaults.video.model, 
+                aspect_ratio=params.get("📐 Video Aspect Ratio") or defaults.video.aspect_ratio
+            )
         )
         
         # Save cache
@@ -57,8 +89,28 @@ def fetch_inputs(client: gspread.Client, spreadsheet_id: str) -> PromptInputs:
     """Fetches base prompts and locations from the PROMPT INPUTS tab, caching them in defaults.json."""
     try:
         logger.info("Fetching inputs from Google Sheets...")
-        sheet = client.open_by_key(spreadsheet_id).worksheet("PROMPT INPUTS")
+        doc = client.open_by_key(spreadsheet_id)
+        
+        try:
+            sheet = doc.worksheet("PROMPT INPUTS")
+        except gspread.exceptions.WorksheetNotFound:
+            logger.warning("PROMPT INPUTS tab not found. Creating it with defaults.")
+            sheet = doc.add_worksheet(title="PROMPT INPUTS", rows=10, cols=2)
+            
         records = sheet.get_all_records()
+        
+        if not records:
+            logger.info("Populating PROMPT INPUTS tab with default values...")
+            if not sheet.row_values(1):
+                sheet.append_row(["Input Field", "Value"])
+            sheet.append_rows([
+                ["Initial Image Prompt", "A cinematic shot of a fashion model, highly detailed, 4k"],
+                ["Locations", "Paris\nTokyo\nNew York"],
+                ["Additional Image Instructions", "Keep lighting natural and photorealistic"],
+                ["Additional Video Instructions", "Gentle cinematic camera pan"],
+                ["Initial Image File", ""]
+            ])
+            records = sheet.get_all_records()
         
         inputs = {str(r.get("Input Field", "")).strip(): str(r.get("Value", "")).strip() for r in records}
         

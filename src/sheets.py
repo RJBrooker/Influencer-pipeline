@@ -61,13 +61,23 @@ def fetch_parameters(client: gspread.Client, spreadsheet_id: str) -> BatchParame
 
         params = {r.get("Parameter"): r.get("Value") for r in records}
         
+        # Intercept and correct invalid models fetched from older sheets
+        fetched_img_model = params.get("🖼️ Image Model")
+        if fetched_img_model in ["gemini-3.0-pro-image", "gemini-3.1-pro-preview"]:
+            logger.warning(f"Intercepted invalid image model '{fetched_img_model}' from Google Sheets. Auto-correcting to 'imagen-3.0-generate-002'.")
+            fetched_img_model = "imagen-3.0-generate-002"
+            
+        fetched_text_model = params.get("📝 Text Model")
+        if fetched_text_model == "gemini-3.0-pro-preview":
+            fetched_text_model = "gemini-3.1-pro-preview"
+        
         batch_params = BatchParameters(
             text=TextSettings(
-                model=params.get("📝 Text Model") or defaults.text.model, 
+                model=fetched_text_model or defaults.text.model, 
                 temperature=float(params.get("🌡️ Text Temperature") if params.get("🌡️ Text Temperature") not in [None, ""] else defaults.text.temperature)
             ),
             image=ImageSettings(
-                model=params.get("🖼️ Image Model") or defaults.image.model, 
+                model=fetched_img_model or defaults.image.model, 
                 aspect_ratio=params.get("📐 Image Aspect Ratio") or defaults.image.aspect_ratio
             ),
             video=VideoSettings(

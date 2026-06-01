@@ -55,10 +55,10 @@ graph TD
     A[(Google Sheets)] -->|Init| B[projects/my_campaign/]
     
     B --> C(run-base)
-    C -->|Gemini 3.0 Pro| D[Base Image & Video Prompt]
+    C -->|Gemini 3.1 Pro| D[Base Image & Video Prompt]
     
     D --> E(run-locations)
-    E -->|Gemini 3.0 Pro| F[Location Image Variations]
+    E -->|Gemini 3.1 Pro| F[Location Image Variations]
     
     F --> G(run-videos)
     G -->|Veo / Fal.ai| H[Final MP4 Video Batch]

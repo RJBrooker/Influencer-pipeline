@@ -1,0 +1,28 @@
+{
+    "parameters": {
+        "text": {
+            "model": "gemini-3.1-pro-preview",
+            "temperature": 0.0
+        },
+        "image": {
+            "model": "gemini-3.1-pro-preview",
+            "aspect_ratio": "9:16"
+        },
+        "video": {
+            "model": "veo-3.1-generate-preview",
+            "aspect_ratio": "9:16",
+            "duration_seconds": 4
+        }
+    },
+    "inputs": {
+        "initial_image_prompt": "A cinematic shot of a fashion model, highly detailed, 4k",
+        "locations": [
+            "Paris",
+            "Tokyo",
+            "New York"
+        ],
+        "additional_image_instructions": "Keep lighting natural and photorealistic",
+        "additional_video_instructions": "Gentle cinematic camera pan",
+        "initial_image_file": null
+    }
+}

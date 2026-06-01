@@ -14,8 +14,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # Standard Pricing Constants (Adjust as necessary)
 PRICING: Dict[str, Dict[str, float]] = {
     "gemini-2.5-flash": {"input_per_1m": 0.075, "output_per_1m": 0.30},
-    "gemini-3.1-pro-preview": {"input_per_1m": 1.25, "output_per_1m": 5.00},
-    "gemini-3.0-pro-image": {"per_image": 0.03},
+    "gemini-3.1-pro-preview": {"input_per_1m": 1.25, "output_per_1m": 5.00, "per_image": 0.03},
     "veo-3.1-generate-preview": {"per_video": 0.05},
     "fal-ai/hunyuan-video": {"per_video": 0.04},
 }
@@ -41,7 +40,7 @@ class TextSettings(BaseModel):
 
 
 class ImageSettings(BaseModel):
-    model: str = "gemini-3.0-pro-image"
+    model: str = "gemini-3.1-pro-preview"
     aspect_ratio: str = "9:16"
 
 

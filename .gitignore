@@ -17,6 +17,9 @@ output/
 *.mov
 *.avi
 
+# Allow media directory for README images
+!media/*
+
 # Google Credentials and Tokens
 *.json
 !project_config.json
